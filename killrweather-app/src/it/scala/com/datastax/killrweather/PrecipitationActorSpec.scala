@@ -33,7 +33,7 @@ class PrecipitationActorSpec extends ActorSparkSpec {
   val ssc = new StreamingContext(sc, Seconds(SparkStreamingBatchInterval))
 
   override val kafkaActor = Some(system.actorOf(Props(new KafkaStreamingActor(
-    kafka.kafkaParams, kafka.kafkaConfig, ssc, settings, self)), "kafka-stream"))
+    kafka.kafkaParams, ssc, settings, self)), "kafka-stream"))
 
   val precipitation = system.actorOf(Props(new PrecipitationActor(ssc, settings)), "precipitation")
 

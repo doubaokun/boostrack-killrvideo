@@ -68,34 +68,39 @@ private[killrweather] class WeatherApiQueries extends Actor with ActorLogging wi
       queried.exists(_.wsid.startsWith(key))
     }
 
-    val sample: Day = fileFeed().flatMap { case f =>
-      val source = FileSource(f).source
-      val s = source.getLines().map(Day(_)).filterNot(previous).toSeq.headOption
-      Try(source.close())
-      s
-    }.head
+    val samples: Option[Day] = fileFeed().flatMap { case f =>
+            val source = FileSource(f).source
+              try{
+                source.getLines().map(Day(_)).filterNot(previous).toSeq.headOption
+              }finally{
+                 Try(source.close())
+              }
+            }.headOption
 
-    log.info("Requesting the current weather for weather station {}", sample.wsid)
-    // because we load from historic file data vs stream in the cloud for this sample app ;)
-    val timestamp = new DateTime(DateTimeZone.UTC).withYear(sample.year)
-      .withMonthOfYear(sample.month).withDayOfMonth(sample.day)
-    guardian ! GetCurrentWeather(sample.wsid, Some(timestamp))
+    for(sample <- samples) {
 
-    log.info("Requesting annual precipitation for weather station {} in year {}", sample.wsid, sample.year)
-    guardian ! GetPrecipitation(sample.wsid, sample.year)
+      log.info("Requesting the current weather for weather station {}", sample.wsid)
+      // because we load from historic file data vs stream in the cloud for this sample app ;)
+      val timestamp = new DateTime(DateTimeZone.UTC).withYear(sample.year)
+        .withMonthOfYear(sample.month).withDayOfMonth(sample.day)
+      guardian ! GetCurrentWeather(sample.wsid, Some(timestamp))
 
-    log.info("Requesting top-k Precipitation for weather station {}", sample.wsid)
-    guardian ! GetTopKPrecipitation(sample.wsid, sample.year, k = 10)
+      log.info("Requesting annual precipitation for weather station {} in year {}", sample.wsid, sample.year)
+      guardian ! GetPrecipitation(sample.wsid, sample.year)
 
-    log.info("Requesting the daily temperature aggregate for weather station {}", sample.wsid)
-    guardian ! GetDailyTemperature(sample)
+      log.info("Requesting top-k Precipitation for weather station {}", sample.wsid)
+      guardian ! GetTopKPrecipitation(sample.wsid, sample.year, k = 10)
 
-    log.info("Requesting the high-low temperature aggregate for weather station {}",sample.wsid)
-    guardian ! GetMonthlyHiLowTemperature(sample.wsid, sample.year, sample.month)
+      log.info("Requesting the daily temperature aggregate for weather station {}", sample.wsid)
+      guardian ! GetDailyTemperature(sample)
 
-    log.info("Requesting weather station {}", sample.wsid)
-    guardian ! GetWeatherStation(sample.wsid)
+      log.info("Requesting the high-low temperature aggregate for weather station {}", sample.wsid)
+      guardian ! GetMonthlyHiLowTemperature(sample.wsid, sample.year, sample.month)
 
-    queried += sample
+      log.info("Requesting weather station {}", sample.wsid)
+      guardian ! GetWeatherStation(sample.wsid)
+
+      queried += sample
+    }
   }
 }

@@ -60,6 +60,9 @@ final class WeatherSettings(conf: Option[Config] = None) extends Logging with Se
   val SparkCleanerTtl = withFallback[Int](Try(spark.getInt("cleaner.ttl")),
     "spark.cleaner.ttl") getOrElse (3600*2)
 
+  val SparkUI = withFallback[Int](Try(spark.getInt("ui.port")),
+    "spark.ui.port") getOrElse (4041)
+
   val SparkStreamingBatchInterval = withFallback[Int](Try(spark.getInt("streaming.batch.interval")),
     "spark.streaming.batch.interval") getOrElse 1
 

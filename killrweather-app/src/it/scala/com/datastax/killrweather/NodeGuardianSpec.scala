@@ -39,7 +39,7 @@ class NodeGuardianSpec extends ActorSparkSpec {
   val duration = 60.seconds
 
   // === Don't modify ===
-  system.eventStream.subscribe(self, classOf[NodeInitialized])
+//  system.eventStream.subscribe(self, classOf[NodeInitialized])
 
   val atomic = new AtomicInteger(0)
 
